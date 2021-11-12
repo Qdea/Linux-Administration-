@@ -1,0 +1,102 @@
+#!/bin/bash
+
+cd $HOME
+if [[ ! -e test ]]; then
+	mkdir test
+fi
+
+
+numberOfDirectories=0
+numberOfHiddenFiles=0
+
+for str in $(ls -a /etc)
+do
+	if [[ -d /etc/$str ]]; then
+		echo "$str/"
+	elif [[ -f /etc/$str ]]; then
+		echo "$str"
+	else
+		echo "Nothing"
+	fi
+done > $HOME/test/list
+
+ls -d /etc/*/ | wc -w >> $HOME/test/list
+ls -A /etc/ | grep -E "^\..*" | wc -w >> $HOME/test/list
+
+if [[ ! -e $HOME/test/links ]]; then
+	mkdir $HOME/test/links
+fi
+
+if [[ ! -e $HOME/test/links/list_hlink ]]; then
+	ln $HOME/test/list $HOME/test/links/list_hlink
+fi
+
+if [[ ! -e $HOME/test/links/list_slink ]]; then
+	ln -s $HOME/test/list $HOME/test/links/list_slink
+fi
+
+echo "Number of hard links to list_hlink"
+ls -l $HOME/test/links/list_hlink | awk '{ print $2 }'
+echo "Number of hard links to list"
+ls -l $HOME/test/list | awk '{ print $2 }'
+echo "Number of hard links to list_slink"
+
+wc $HOME/test/list | awk '{ print $1 }' >> $HOME/test/links/list_hlink
+
+cmp -s $HOME/test/links/list_hlink $HOME/test/links/list_slink && echo YES
+
+mv $HOME/test/list $HOME/test/list1
+
+cmp -s $HOME/test/links/list_hlink $HOME/test/links/list_slink && echo YES
+
+if [[ ! -e $HOME/list1 ]]; then
+	ln $HOME/test/links/list_hlink $HOME/list1
+fi
+
+find /etc -type f -name *.conf > $HOME/list_conf
+
+find /etc -type d -name *.d > $HOME/list_d
+
+cat $HOME/list_conf > $HOME/list_conf_d
+cat $HOME/list_d >> $HOME/list_conf_d
+
+cd $HOME/test
+if [[ ! -e .sub ]]; then
+	mkdir .sub
+fi
+
+cp $HOME/list_conf_d $HOME/test/.sub
+
+cp -b $HOME/list_conf_d $HOME/test/.sub
+
+ls -aR $HOME/test
+
+man man > $HOME/man.txt
+
+cd $HOME
+if [[ ! -e man_parts ]]; then
+	mkdir man_parts
+fi
+cd man_parts
+split -b 1k ../man.txt
+
+if [[ ! -e $HOME/man.dir ]]; then
+	mkdir $HOME/man.dir
+fi
+
+mv $HOME/man_parts/x* $HOME/man.dir
+
+cat $HOME/man.dir/x?? > $HOME/man.dir/man.txt
+
+cmp -s $HOME/man.txt $HOME/man.dir/man.txt && echo YES
+
+sed -i '1s/^/Hello World! /' $HOME/man.txt
+echo "Goodbye!" >> $HOME/man.txt
+
+diff -u $HOME/man.txt $HOME/man.dir/man.txt > $HOME/man_difference
+
+mv $HOME/man_difference $HOME/man.dir
+
+patch $HOME/man.dir/man.txt < $HOME/man.dir/man_difference
+
+cmp -s $HOME/man.txt $HOME/man.dir/man.txt && echo YES
