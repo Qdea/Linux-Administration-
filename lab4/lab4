@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#1
+yum group install "Development Tools"
+
+#2
+curl https://rclone.org/install.sh | bash
+rclone config
+rclone ls google-drive
+rclone ls google drive:/data
+rclone copy google-drive:/data/bastet-0.43.tgz ~
+tar -xzvf bastet-0.43.tgz
+mv bastet-0.43 bastet
+yum update
+yum install epel-release boost boost-thread boost-devel ncurses-devel ncurses
+cd bastet
+make
+./bastet
+echo -e "install:\n\t cp ~/bastet/bastet /usr/bin\n\t chmod 775 /usr/bin/bastet\n\t echo "Hi there"" >> Makefile
+make install
+#3
+yum list installed > ~/lab4/task3.log
+
+#4
+rpm -q requires gcc > ~/lab4/task4_1.log
+rpm -q --whatrequires libgcc > ~/lab4/task4_2.log
+
+#5
+mkdir /root/localrepo
+rclone copy google-drive:/data/checkinstall-1.6.2-3.el6.1.x86_64.rpm /root/localrepo/
+yum install createrepo
+createrepo ~/localrepo
+cd /etc/yum.repos.d
+touch local.repo
+echo -e "[Local]\nname=localrepo\nbaseurl=file:/root/localrepo/\nenabled=1\ngpgcheck=0" > local.repo
+
+#6
+yum repolist > ~/lab4/task6.log
+
+#7
+./script.sh
+yum list available
+yum install \*
+
+#8
+rclone google-drive:/data/fortunes-ru_1.52-2_all.deb ~
+yum install xz xz-devel perl-ExtUtils-Embed gcc make
+yum install wget
+wget http://http.debian.net/debian/pool/main/a/alien/alien_8.95.tar.xz
+tar -xJf alien_8.95.tar.xz
+cd alien-8.95
+perl Makefile.PL
+make
+make install
+alien --to-rpm ~/fortunes-ru_1.52-2_all.deb
+rpm -i --force ~/*.rpm
+dnf list installed | grep fortunes
+#9
+wget http://mirror.ghettoforge.org/distributions/gf/el/7/plus/x86_64/nano-2.7.4-3.gf.el7.x86_64.rpm
+
+dnf remove nano
+dnf install nano-2.7.4-3.gf.el7.x86_64.rpm
+alias newnano='/usr/bin/nano'
